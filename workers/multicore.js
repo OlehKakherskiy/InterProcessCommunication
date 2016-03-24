@@ -6,7 +6,9 @@ global.application = {};
 application.master = require('./master.js');
 application.worker = require('./worker.js');
 
-
-
-if (api.cluster.isMaster) application.master();
+if (api.cluster.isMaster) {
+	application.jobDescription = require('./jobDescription.js');
+	console.log(application.jobDescription);
+	application.master();
+}
 else application.worker();

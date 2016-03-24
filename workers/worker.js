@@ -7,10 +7,7 @@ module.exports = function() {
       'message to worker ' + process.pid +
       ' from master: ' + JSON.stringify(message)
     );
-    process.send({
-      result: message.task.map(function(item) {
-        return item * 2;
-      })
-    });
+    var taskFunc = new Function("partialTask",message.workerAction)
+    process.send(taskFunc(message.partialTask));
   });
 };

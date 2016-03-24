@@ -1,21 +1,25 @@
 module.exports = function() {
 
   var cpuCount = api.os.cpus().length;
+  var jobDescription = application.jobDescription;
+
+  var workers = [];
+
   var resultMessages = [];
   var resultsCount = 0;
 
-  var workers = [];
   for (var i = 0; i < cpuCount; i++) {
     var worker = api.cluster.fork();
     workers.push(worker);
   }
 
-  var task = [2, 17, 3, 2, 5, 7, 15, 22, 1, 14, 15, 9, 0, 11];
+  jobDescription.configureJobDescription(cpuCount);
+
   workers.forEach(function(worker) {
-    var H = task.length/cpuCount; //кол-во элементов
-    subArray = task.slice(H*(worker.id-1),H*worker.id);
-    console.log(subArray);
-    worker.send({task:subArray});
+
+    var partialTask = jobDescription.getPartialTask(worker.id);
+
+    worker.send(partialTask);
 
     worker.on('exit', function (code) {
       console.log('exit ' + worker.process.pid + ' ' + code);
@@ -27,14 +31,15 @@ module.exports = function() {
         JSON.stringify(message)
       );
 
-      resultMessages[worker.id-1] = message.result;
+      resultMessages[worker.id-1] = message;
       resultsCount++;
+
       if (resultsCount == cpuCount) {
-        res = [];
-        for(i = 0; i < resultMessages.length; i++){
-          res.push(resultMessages[i]);
-        }
+        console.log("Partial calculations are finished. Merging results...")
+        var res = jobDescription.getMergeStrategy()(resultMessages);
         console.log("Calculations finished "+ res);
+        jobDescription.setJobResult(res);
+        console.log("Job is done.");
         process.exit(1);
       }
 
