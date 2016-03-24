@@ -9,9 +9,8 @@ module.exports = function() {
     );
     process.send({
       result: message.task.map(function(item) {
-        return item * 2
+        return item * 2;
       })
     });
   });
-
 };
